@@ -3,7 +3,7 @@ import { AnalyticsController } from "../controllers/analytics.controller";
 
 const router = Router();
 
-router.get("/year-progress", AnalyticsController.getYearProgress);
-router.post("/calculate-diff", AnalyticsController.calculateDateDiff);
+router.get("/calendar", AnalyticsController.getCalendarConversions);
+router.get("/life-metrics", AnalyticsController.getLifeAnalytics);
 
 export default router;
