@@ -1,40 +1,27 @@
 import { Request, Response } from "express";
-import { YearProgressEngine } from "../engine/yearProgress.engine";
-import { DateDiffEngine } from "../engine/dateDiff.engine";
-import { DateValidator } from "../validators/date.validator";
-import { ResponseUtil } from "../utils/response.util";
+import { CalendarService } from "../services/calendar.service";
+import { AnalyticsService } from "../services/analytics.service";
 
 export class AnalyticsController {
-  public static getYearProgress(req: Request, res: Response): void {
-    const targetDate = req.query.date
+  public static getCalendarConversions(req: Request, res: Response): void {
+    const dateParam = req.query.date
       ? new Date(req.query.date as string)
       : new Date();
-    const metrics = YearProgressEngine.calculate(targetDate);
-    ResponseUtil.success(
-      res,
-      metrics,
-      "Year progress calculated successfully.",
-    );
+    const ethiopian = CalendarService.toEthiopian(dateParam);
+    const unixTimestamp = Math.floor(dateParam.getTime() / 1000);
+
+    res.json({
+      gregorianISO: dateParam.toISOString(),
+      unixTimestamp,
+      ethiopian,
+    });
   }
 
-  public static calculateDateDiff(req: Request, res: Response): void {
-    const { startDate, endDate } = req.body;
-    const validation = DateValidator.validateRange(startDate, endDate);
+  public static getLifeAnalytics(req: Request, res: Response): void {
+    const birthDate = (req.query.birthDate as string) || "2000-01-01";
+    const targetAge = Number(req.query.targetAge) || 80;
 
-    if (!validation.valid) {
-      ResponseUtil.error(
-        res,
-        validation.error || "Invalid date arguments.",
-        400,
-      );
-      return;
-    }
-
-    const start = new Date(startDate);
-    const end = endDate ? new Date(endDate) : new Date();
-    const diff = DateDiffEngine.calculateDiff(start, end);
-
-    ResponseUtil.success(res, diff, "Date diff calculated successfully.");
+    const metrics = AnalyticsService.calculateLifeMetrics(birthDate, targetAge);
+    res.json(metrics);
   }
 }
-
