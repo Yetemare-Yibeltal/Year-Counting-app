@@ -1,4 +1,8 @@
 node_modules/
+package-lock.json
+.vite/
+client/.vite/
+client/node_modules/
+server/node_modules/
 dist/
 .env
-*.log
