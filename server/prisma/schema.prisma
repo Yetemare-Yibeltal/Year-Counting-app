@@ -1,6 +1,4 @@
-node -e '
-const fs = require("fs");
-const schema = `generator client {
+generator client {
   provider = "prisma-client-js"
 }
 
@@ -12,7 +10,3 @@ model User {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now())
 }
-`;
-fs.writeFileSync("server/prisma/schema.prisma", schema);
-console.log("Updated schema.prisma for Prisma 7!");
-'
