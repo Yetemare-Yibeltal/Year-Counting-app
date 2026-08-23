@@ -2,7 +2,6 @@ import { Request, Response } from "express";
 import { prisma } from "../lib/prisma";
 import { invalidateCachePattern } from "../middleware/cache";
 
-// GET /api/users
 export const getUsers = async (_req: Request, res: Response) => {
   try {
     const users = await prisma.user.findMany({
@@ -14,10 +13,14 @@ export const getUsers = async (_req: Request, res: Response) => {
   }
 };
 
-// GET /api/users/:id
 export const getUserById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
+
+    if (typeof id !== "string") {
+      return res.status(400).json({ error: "Invalid user ID parameter" });
+    }
+
     const user = await prisma.user.findUnique({
       where: { id },
     });
@@ -32,14 +35,22 @@ export const getUserById = async (req: Request, res: Response) => {
   }
 };
 
-// POST /api/users
-export const createUser = async (_req: Request, res: Response) => {
+export const createUser = async (req: Request, res: Response) => {
   try {
+    const { email, name, role } = req.body;
+
+    if (!email || typeof email !== "string") {
+      return res.status(400).json({ error: "Email is required" });
+    }
+
     const user = await prisma.user.create({
-      data: {},
+      data: {
+        email,
+        name: typeof name === "string" ? name : null,
+        role: role === "ADMIN" ? "ADMIN" : "USER",
+      },
     });
 
-    // Invalidate list cache
     await invalidateCachePattern("users:/api/users*");
 
     res.status(201).json(user);
@@ -48,16 +59,18 @@ export const createUser = async (_req: Request, res: Response) => {
   }
 };
 
-// DELETE /api/users/:id
 export const deleteUser = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
+
+    if (typeof id !== "string") {
+      return res.status(400).json({ error: "Invalid user ID parameter" });
+    }
 
     await prisma.user.delete({
       where: { id },
     });
 
-    // Invalidate both individual user and list cache
     await invalidateCachePattern(`users:/api/users/${id}*`);
     await invalidateCachePattern("users:/api/users*");
 
