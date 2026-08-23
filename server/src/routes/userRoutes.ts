@@ -5,18 +5,20 @@ import {
   createUser,
   deleteUser,
 } from "../controllers/userController";
+import { validate } from "../middleware/validate";
 import { cacheMiddleware } from "../middleware/cache";
+import { createUserSchema, userIdParamSchema } from "../schemas/userSchema";
 
 const router = Router();
 
-// Cache list responses for 5 minutes (300 seconds)
-router.get("/", cacheMiddleware("users", 300), getUsers);
+router
+  .route("/")
+  .get(cacheMiddleware(300), getUsers)
+  .post(validate(createUserSchema), createUser);
 
-// Cache individual user details for 10 minutes (600 seconds)
-router.get("/:id", cacheMiddleware("users", 600), getUserById);
-
-// Write operations invalidate cached data
-router.post("/", createUser);
-router.delete("/:id", deleteUser);
+router
+  .route("/:id")
+  .get(validate(userIdParamSchema), cacheMiddleware(300), getUserById)
+  .delete(validate(userIdParamSchema), deleteUser);
 
 export default router;
