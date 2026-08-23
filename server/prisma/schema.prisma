@@ -4,23 +4,21 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-}
-
-model User {
-  id           String   @id @default(uuid())
-  email        String   @unique
-  password     String
-  name         String?
-  role         Role     @default(USER)
-  refreshToken String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  @@map("users")
+  url      = env("DATABASE_URL")
 }
 
 enum Role {
   USER
   ADMIN
-  MODERATOR
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  password     String?
+  name         String?
+  role         Role     @default(USER)
+  refreshToken String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }
