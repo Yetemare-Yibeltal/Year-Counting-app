@@ -1,41 +1,33 @@
 import express from "express";
-import { globalRateLimiter, strictRateLimiter } from "./middleware/rateLimiter";
-import { cacheMiddleware, invalidateCachePattern } from "./middleware/cache";
-import { PrismaClient } from "@prisma/client";
+import dotenv from "dotenv";
+import { prisma } from "./lib/prisma";
+import { redis } from "./lib/redis";
+
+dotenv.config();
 
 const app = express();
-const prisma = new PrismaClient();
+const PORT = process.env.PORT || 5000;
 
 app.use(express.json());
 
-// 1. Apply global rate limiting across all API endpoints
-app.use("/api", globalRateLimiter);
-
-// 2. Cached GET Endpoint (TTL: 300 seconds)
-app.get("/api/metrics", cacheMiddleware(300), async (req, res) => {
+app.get("/health", async (_req, res) => {
   try {
-    const metrics = await prisma.user.findMany({
-      select: { id: true, createdAt: true },
+    await prisma.$queryRaw`SELECT 1`;
+    const redisPing = await redis.ping();
+
+    res.json({
+      status: "ok",
+      database: "connected",
+      redis: redisPing === "PONG" ? "connected" : "disconnected",
     });
-
-    res.json({ success: true, count: metrics.length, data: metrics });
   } catch (error) {
-    res.status(500).json({ error: "Database query failed" });
+    res.status(500).json({
+      status: "error",
+      message: error instanceof Error ? error.message : "Health check failed",
+    });
   }
 });
 
-// 3. Rate-limited POST Endpoint + Cache Invalidation
-app.post("/api/metrics", strictRateLimiter, async (req, res) => {
-  try {
-    const newEntry = await prisma.user.create({ data: req.body });
-
-    // Invalidate cached GET queries so fresh data is returned next time
-    await invalidateCachePattern("/api/metrics*");
-
-    res.status(201).json({ success: true, data: newEntry });
-  } catch (error) {
-    res.status(400).json({ error: "Failed to create entry" });
-  }
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on http://localhost:${PORT}`);
 });
-
-app.listen(5000, () => console.log("Server running on port 5000"));
