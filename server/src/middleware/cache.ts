@@ -1,41 +1,29 @@
 import { Request, Response, NextFunction } from "express";
-import { redis } from "../config/redis";
+import { redis } from "../lib/redis";
 
-/**
- * Express middleware to cache GET responses in Redis.
- * @param ttlSeconds Time-to-live in seconds (default: 300 seconds)
- */
-export const cacheMiddleware = (ttlSeconds: number = 300) => {
-  return async (
-    req: Request,
-    res: Response,
-    next: NextFunction,
-  ): Promise<void> => {
-    if (req.method !== "GET") {
-      next();
-      return;
-    }
-
-    const cacheKey = `cache:${req.originalUrl || req.url}`;
+export const cacheMiddleware = (keyPrefix: string, ttlSeconds = 300) => {
+  return async (req: Request, res: Response, next: NextFunction) => {
+    // Construct cache key based on route parameters or query strings
+    const cacheKey = `${keyPrefix}:${req.originalUrl || req.url}`;
 
     try {
       const cachedData = await redis.get(cacheKey);
 
       if (cachedData) {
         res.setHeader("X-Cache", "HIT");
-        res.json(JSON.parse(cachedData));
-        return;
+        return res.json(JSON.parse(cachedData));
       }
 
       res.setHeader("X-Cache", "MISS");
 
+      // Intercept res.json to capture response payload and write to Redis
       const originalJson = res.json.bind(res);
-      res.json = (body: any): Response => {
+      res.json = (body: unknown) => {
         if (res.statusCode >= 200 && res.statusCode < 300) {
           redis
             .setex(cacheKey, ttlSeconds, JSON.stringify(body))
             .catch((err) => {
-              console.error("Failed to write to Redis cache:", err);
+              console.error("Redis set cache error:", err);
             });
         }
         return originalJson(body);
@@ -49,16 +37,14 @@ export const cacheMiddleware = (ttlSeconds: number = 300) => {
   };
 };
 
-/**
- * Helper to purge stale Redis cache keys matching a pattern.
- */
-export const invalidateCachePattern = async (
-  pattern: string,
-): Promise<void> => {
+export const invalidateCachePattern = async (pattern: string) => {
   try {
-    const keys = await redis.keys(`cache:${pattern}`);
+    const keys = await redis.keys(pattern);
     if (keys.length > 0) {
       await redis.del(...keys);
+      console.log(
+        `🧹 Invalidated ${keys.length} cache keys matching pattern: ${pattern}`,
+      );
     }
   } catch (error) {
     console.error("Cache invalidation error:", error);
