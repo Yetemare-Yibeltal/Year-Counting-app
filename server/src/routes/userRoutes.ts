@@ -6,6 +6,6 @@ import { cacheMiddleware } from "../middleware/cache";
 const router = Router();
 
 router.route("/")
-  .get(authenticate, cacheMiddleware("300s"), getUsers3);
+  .get(authenticate, cacheMiddleware("300s"), getUsers);
 
 export default router;
