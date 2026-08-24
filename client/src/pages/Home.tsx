@@ -1,6 +1,6 @@
 import React from "react";
-import AgeCalculatorView from "../components/calculator/AgeCalculatorView";
-import YearProgressBar from "../components/dashboard/YearProgressBar";
+import { AgeCalculatorView } from "../components/calculator/AgeCalculatorView";
+import { YearProgressBar } from "../components/dashboard/YearProgressBar";
 
 export const Home: React.FC = () => {
   return (
@@ -11,7 +11,7 @@ export const Home: React.FC = () => {
             Year Counting & Time Calculator
           </h1>
           <p className="mt-3 text-lg text-gray-500">
-            Calculate precise year intervals, age breakdown, and track real-time year progress effortlessly.
+            Calculate precise year intervals, age breakdown, and track real-time year progress.
           </p>
         </header>
 
