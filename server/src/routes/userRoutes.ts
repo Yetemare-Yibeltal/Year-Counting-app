@@ -1,11 +1,30 @@
 import { Router } from "express";
-import { getUsers, getUserById } from "../controllers/userController";
+import {
+  getUsers,
+  getUserById,
+  createUser,
+  deleteUser,
+} from "../controllers/userController";
+import { validate } from "../middleware/validate";
+import { cacheMiddleware } from "../middleware/cache";
 import { authenticate } from "../middleware/authMiddleware";
+import { createUserSchema, userIdParamSchema } from "../schemas/userSchema";
 
 const router = Router();
 
-// Protect all user routes with JWT authentication
-router.get("/", authenticate, getUsers);
-router.get("/:id", authenticate, getUserById);
+router
+  .route("/")
+  .get(authenticate, cacheMiddleware(300), getUsers)
+  .post(validate(createUserSchema), createUser);
+
+router
+  .route("/:id")
+  .get(
+    authenticate,
+    validate(userIdParamSchema),
+    cacheMiddleware(300),
+    getUserById,
+  )
+  .delete(authenticate, validate(userIdParamSchema), deleteUser);
 
 export default router;
