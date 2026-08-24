@@ -1,47 +1,50 @@
 import { Request, Response, NextFunction } from "express";
-import { verifyAccessToken, TokenPayload } from "../utils/auth";
-import { ApiResponse } from "../utils/apiResponse";
+import jwt from "jsonwebtoken";
+import { AppError } from "./errorHandler";
 
-export interface AuthenticatedRequest extends Request {
-  user?: TokenPayload;
+export interface AuthRequest extends Request {
+  user?: {
+    id: string;
+    role: string;
+  };
 }
 
-export const authenticateToken = (
-  req: AuthenticatedRequest,
-  res: Response,
+export const authenticate = (
+  req: AuthRequest,
+  _res: Response,
   next: NextFunction,
-): void => {
+) => {
   const authHeader = req.headers.authorization;
-  const token = authHeader && authHeader.split(" ")[1];
 
-  if (!token) {
-    ApiResponse.unauthorized(res, "Access token missing or malformed");
-    return;
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return next(new AppError("Access denied. No token provided.", 401));
   }
 
+  const token = authHeader.split(" ")[1];
+
   try {
-    const decoded = verifyAccessToken(token);
+    const decoded = jwt.verify(
+      token,
+      process.env.JWT_SECRET || "fallback_secret",
+    ) as { id: string; role: string };
+
     req.user = decoded;
     next();
   } catch (error) {
-    ApiResponse.forbidden(res, "Invalid or expired access token");
+    return next(new AppError("Invalid or expired token.", 401));
   }
 };
 
-export const requireRole = (allowedRoles: string[]) => {
-  return (
-    req: AuthenticatedRequest,
-    res: Response,
-    next: NextFunction,
-  ): void => {
+export const authorize = (...roles: string[]) => {
+  return (req: AuthRequest, _res: Response, next: NextFunction) => {
     if (!req.user) {
-      ApiResponse.unauthorized(res, "Authentication required");
-      return;
+      return next(new AppError("User not authenticated.", 401));
     }
 
-    if (!allowedRoles.includes(req.user.role)) {
-      ApiResponse.forbidden(res, "Forbidden: insufficient permissions");
-      return;
+    if (!roles.includes(req.user.role)) {
+      return next(
+        new AppError("You do not have permission to perform this action.", 403),
+      );
     }
 
     next();
