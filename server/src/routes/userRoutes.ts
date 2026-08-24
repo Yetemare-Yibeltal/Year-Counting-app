@@ -7,7 +7,7 @@ import {
 } from "../controllers/userController";
 import { validate } from "../middleware/validate";
 import { cacheMiddleware } from "../middleware/cache";
-import { authenticate } from "../middleware/authMiddleware";
+import { authenticate, authorize } from "../middleware/authMiddleware";
 import { createUserSchema, userIdParamSchema } from "../schemas/userSchema";
 
 const router = Router();
@@ -25,6 +25,11 @@ router
     cacheMiddleware(300),
     getUserById,
   )
-  .delete(authenticate, validate(userIdParamSchema), deleteUser);
+  .delete(
+    authenticate,
+    authorize("ADMIN"),
+    validate(userIdParamSchema),
+    deleteUser,
+  );
 
 export default router;
