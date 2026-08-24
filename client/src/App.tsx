@@ -1,36 +1,21 @@
 import React from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "./context/AuthContext";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 
-// Pages
-import { Home } from "./pages/Home";
-import { Login } from "./pages/Login";
-import { Register } from "./pages/Register";
-import { Dashboard } from "./pages/Dashboard";
-import { AdminPanel } from "./pages/AdminPanel";
-import { Unauthorized } from "./pages/Unauthorized";
+// Import your pages/components
+import Home from "./pages/Home";
 
-const App: React.FC = () => {
+export const App: React.FC = () => {
   return (
-    <Router>
-      <Routes>
-        {/* Public Routes */}
-        <Route path="/" element={<Home />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/unauthorized" element={<Unauthorized />} />
-
-        {/* Authenticated User Routes */}
-        <Route element={<ProtectedRoute />}>
-          <Route path="/dashboard" element={<Dashboard />} />
-        </Route>
-
-        {/* Admin Only Routes */}
-        <Route element={<ProtectedRoute requiredRole="ADMIN" />}>
-          <Route path="/admin" element={<AdminPanel />} />
-        </Route>
-      </Routes>
-    </Router>
+    <AuthProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          {/* Add additional public & protected routes here */}
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
   );
 };
 
