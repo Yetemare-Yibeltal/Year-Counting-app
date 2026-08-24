@@ -1,31 +1,34 @@
-import React from 'react';
-import { Header } from './components/layout/Header';
-import { YearProgressBar } from './components/dashboard/YearProgressBar';
-import { CalendarMatrix } from './components/dashboard/CalendarMatrix';
-import { AgeCalculatorView } from './components/calculator/AgeCalculatorView';
-import { LifeMetricsWidget } from './components/analytics/LifeMetricsWidget';
-import { CustomCountdownList } from './components/calculator/CustomCountdownList';
-import { useLiveTicker } from './hooks/useLiveTicker';
-import { ClientProgressUtil } from './utils/clientProgress.util';
+import React from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { ProtectedRoute } from "./components/ProtectedRoute";
 
-export const App: React.FC = () => {
-  const now = useLiveTicker(50);
-  const metrics = ClientProgressUtil.calculateLive(now);
+// Pages (adjust imports based on your page names)
+import { Home } from "./pages/Home";
+import { Login } from "./pages/Login";
+import { Register } from "./pages/Register";
+import { Dashboard } from "./pages/Dashboard";
+import { AdminPanel } from "./pages/AdminPanel";
 
+const App: React.FC = () => {
   return (
-    <div className="min-h-screen bg-black text-gray-100 flex flex-col font-sans">
-      <Header />
-      <main className="flex-grow max-w-6xl w-full mx-auto px-4 md:px-6">
-        <YearProgressBar metrics={metrics} />
-        <CalendarMatrix />
-        <AgeCalculatorView />
-        <LifeMetricsWidget />
-        <CustomCountdownList />
-      </main>
-      <footer className="border-t border-gray-900 py-6 text-center text-xs text-gray-600">
-        &copy; {metrics.year} Chronos Year Counter Systems. All rights reserved.
-      </footer>
-    </div>
+    <Router>
+      <Routes>
+        {/* Public Routes */}
+        <Route path="/" element={<Home />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+
+        {/* Authenticated User Routes */}
+        <Route element={<ProtectedRoute />}>
+          <Route path="/dashboard" element={<Dashboard />} />
+        </Route>
+
+        {/* Admin Only Routes */}
+        <Route element={<ProtectedRoute requiredRole="ADMIN" />}>
+          <Route path="/admin" element={<AdminPanel />} />
+        </Route>
+      </Routes>
+    </Router>
   );
 };
 
