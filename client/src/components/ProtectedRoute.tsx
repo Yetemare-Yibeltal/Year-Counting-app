@@ -4,10 +4,12 @@ import { useAuth } from "../context/AuthContext";
 
 interface ProtectedRouteProps {
   allowedRoles?: string[];
+  requiredRole?: string;
 }
 
-export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ allowedRoles }) => {
-  const { user, isAuthenticated, loading } = useAuth();
+export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ allowedRoles, requiredRole }) => {
+  const auth = useAuth() as ReturnType<typeof useAuth> & { loading?: boolean };
+  const { user, isAuthenticated, loading = false } = auth;
 
   if (loading) {
     return (
@@ -21,7 +23,9 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ allowedRoles }) 
     return <Navigate to="/login" replace />;
   }
 
-  if (allowedRoles && user && !allowedRoles.includes(user.role)) {
+  const effectiveRoles = allowedRoles || (requiredRole ? [requiredRole] : undefined);
+
+  if (effectiveRoles && user && !effectiveRoles.includes(user.role)) {
     return <Navigate to="/unauthorized" replace />;
   }
 
