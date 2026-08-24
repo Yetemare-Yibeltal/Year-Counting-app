@@ -1,22 +1,20 @@
-import React from 'react';
+import React from "react";
+import { Link } from "react-router-dom";
 
 export const Header: React.FC = () => {
   return (
-    <header className="w-full border-b border-gray-800 bg-gray-950/80 backdrop-blur-md sticky top-0 z-50 py-4 px-6 mb-8">
-      <div className="max-w-6xl mx-auto flex justify-between items-center">
-        <div className="flex items-center space-x-3">
-          <div className="w-3 h-3 rounded-full bg-indigo-500 animate-pulse" />
-          <span className="text-xl font-black tracking-wider text-white">CHRONOS</span>
-          <span className="text-xs px-2 py-0.5 rounded bg-indigo-950 text-indigo-400 border border-indigo-800">
-            v1.0.0
-          </span>
-        </div>
-        <nav className="flex space-x-6 text-sm text-gray-400 font-medium">
-          <a href="#dashboard" className="hover:text-white transition-colors">Dashboard</a>
-          <a href="#calculator" className="hover:text-white transition-colors">Age Calculator</a>
-          <a href="#milestones" className="hover:text-white transition-colors">Milestones</a>
+    <header className="bg-white shadow-sm border-b border-gray-100">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+        <Link to="/" className="text-xl font-bold text-indigo-600 flex items-center gap-2">
+          <span>📅</span>
+          <span>Year Counter App</span>
+        </Link>
+        <nav className="flex items-center gap-4 text-sm font-medium text-gray-600">
+          <span>Standard Calculator</span>
         </nav>
       </div>
     </header>
   );
 };
+
+export default Header;
