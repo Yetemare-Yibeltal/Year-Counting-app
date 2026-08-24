@@ -1,14 +1,19 @@
 import React from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { Home } from "./pages/Home";
+import Header from "./components/layout/Header";
+import { LiveTracker } from "./components/features/LiveTracker";
+import { CalculatorSuite } from "./components/features/CalculatorSuite";
+import { SystemSpecs } from "./components/features/SystemSpecs";
 
 export const App: React.FC = () => {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Home />} />
-      </Routes>
-    </BrowserRouter>
+    <div className="min-h-screen bg-gray-950 text-gray-100 font-sans">
+      <Header />
+      <main>
+        <LiveTracker />
+        <CalculatorSuite />
+        <SystemSpecs />
+      </main>
+    </div>
   );
 };
 
