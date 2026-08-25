@@ -1,3 +1,4 @@
+```ts
 import { Request, Response, NextFunction, RequestHandler } from "express";
 import { rateLimit, Options } from "express-rate-limit";
 import RedisStore from "rate-limit-redis";
@@ -14,45 +15,59 @@ const DEFAULT_WINDOW_MS = 15 * 60 * 1000;
 const DEFAULT_LIMIT = 100;
 
 export const createCustomRateLimiter = (
-  config?: CustomRateLimiterConfig,
+  config?: CustomRateLimiterConfig
 ): RequestHandler => {
-  const windowMs = config?.windowMs || DEFAULT_WINDOW_MS;
-  const limit = config?.limit || DEFAULT_LIMIT;
-  const statusCode = config?.statusCode || 429;
+  const windowMs = config?.windowMs ?? DEFAULT_WINDOW_MS;
+  const limit = config?.limit ?? DEFAULT_LIMIT;
+  const statusCode = config?.statusCode ?? 429;
   const customMessage =
-    config?.message || "Too many requests. Please try again later.";
+    config?.message ?? "Too many requests. Please try again later.";
 
   const redisStore = new RedisStore({
-    // @ts-expect-error - ioredis type compatibility with rate-limit-redis
-    sendCommand: (...args: string[]) => {
+    sendCommand: async (...args: string[]) => {
       if (!isRedisReady()) {
-        return Promise.reject(
-          new Error("Redis store offline - bypassing rate limit checks"),
+        throw new Error(
+          "Redis store offline - bypassing rate limit checks"
         );
       }
-      return redis.call(...args);
+
+      const [command, ...commandArgs] = args;
+
+      if (!command) {
+        throw new Error("Redis command is missing");
+      }
+
+      return redis.call(command, ...commandArgs);
     },
   });
 
   const limiterOptions: Partial<Options> = {
     windowMs,
     limit,
+
     standardHeaders: "draft-7",
     legacyHeaders: false,
+
+    // Continue serving requests if Redis is unavailable.
     passOnStoreError: true,
+
     store: redisStore,
+
     keyGenerator: (req: Request): string => {
       return req.ip || req.socket.remoteAddress || "unknown-client";
     },
+
     handler: (
-      req: Request,
+      _req: Request,
       res: Response,
       _next: NextFunction,
-      options: Options,
+      options: Options
     ) => {
-      res.status(options.statusCode || statusCode).json({
+      const responseStatusCode = options.statusCode || statusCode;
+
+      res.status(responseStatusCode).json({
         status: "error",
-        statusCode: options.statusCode || statusCode,
+        statusCode: responseStatusCode,
         message: customMessage,
         retryAfterSeconds: Math.ceil(options.windowMs / 1000),
       });
@@ -77,3 +92,4 @@ export const authLimiter = createCustomRateLimiter({
 export const apiRateLimiter = globalLimiter;
 
 export default globalLimiter;
+```;
