@@ -22,12 +22,21 @@ app.use("/api/users", userRoutes);
 app.get("/health", async (_req, res, next) => {
   try {
     await prisma.$queryRaw`SELECT 1`;
-    const redisPing = await redis.ping();
+
+    let redisStatus = "disconnected";
+    if (redis.status === "ready") {
+      try {
+        const redisPing = await redis.ping();
+        if (redisPing === "PONG") redisStatus = "connected";
+      } catch {
+        redisStatus = "disconnected";
+      }
+    }
 
     res.json({
       status: "ok",
       database: "connected",
-      redis: redisPing === "PONG" ? "connected" : "disconnected",
+      redis: redisStatus,
     });
   } catch (error) {
     next(error);
