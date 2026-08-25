@@ -8,7 +8,6 @@ export interface CustomRateLimiterConfig {
   limit?: number;
   message?: string;
   statusCode?: number;
-  keyGenerator?: (req: Request) => string;
 }
 
 const DEFAULT_WINDOW_MS = 15 * 60 * 1000;
@@ -21,14 +20,14 @@ export const createCustomRateLimiter = (
   const limit = config?.limit || DEFAULT_LIMIT;
   const statusCode = config?.statusCode || 429;
   const customMessage =
-    config?.message || "Too many requests. Please slow down.";
+    config?.message || "Too many requests. Please try again later.";
 
   const redisStore = new RedisStore({
     // @ts-expect-error - ioredis type compatibility with rate-limit-redis
     sendCommand: (...args: string[]) => {
       if (!isRedisReady()) {
         return Promise.reject(
-          new Error("Redis offline - rate limiter bypassing store"),
+          new Error("Redis store offline - bypassing rate limit checks"),
         );
       }
       return redis.call(...args);
@@ -42,11 +41,9 @@ export const createCustomRateLimiter = (
     legacyHeaders: false,
     passOnStoreError: true,
     store: redisStore,
-    keyGenerator: config?.keyGenerator
-      ? config.keyGenerator
-      : (req: Request): string => {
-          return req.ip || req.socket.remoteAddress || "unknown-client";
-        },
+    keyGenerator: (req: Request): string => {
+      return req.ip || req.socket.remoteAddress || "unknown-client";
+    },
     handler: (
       req: Request,
       res: Response,
