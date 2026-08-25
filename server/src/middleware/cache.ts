@@ -21,13 +21,9 @@ const generateCacheKey = (req: Request, prefix: string = "cache"): string => {
 
 export const cacheMiddleware = (
   ttlInSeconds: number,
-  prefix: string = "cache",
+  prefix: string = "cache"
 ): RequestHandler => {
-  return async (
-    req: Request,
-    res: Response,
-    next: NextFunction,
-  ): Promise<void> => {
+  return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     if (req.method !== "GET") {
       return next();
     }
@@ -43,8 +39,7 @@ export const cacheMiddleware = (
       const cachedContent = await redis.get(key);
 
       if (cachedContent) {
-        const parsedPayload: CachedResponseStructure =
-          JSON.parse(cachedContent);
+        const parsedPayload: CachedResponseStructure = JSON.parse(cachedContent);
         res.setHeader("X-Cache-Status", "HIT");
         if (parsedPayload.contentType) {
           res.setHeader("Content-Type", parsedPayload.contentType);
@@ -72,10 +67,7 @@ export const cacheMiddleware = (
         redis
           .setex(key, ttlInSeconds, JSON.stringify(payloadToCache))
           .catch((writeError) => {
-            console.warn(
-              `[Cache Layer Write Failure] Key "${key}":`,
-              writeError,
-            );
+            console.warn(`[Cache Layer Write Failure] Key "${key}":`, writeError);
           });
       }
 
@@ -91,11 +83,7 @@ export const clearCacheByPattern = async (pattern: string): Promise<number> => {
 };
 
 export const invalidateRouteCache = (routePrefix: string): RequestHandler => {
-  return async (
-    _req: Request,
-    _res: Response,
-    next: NextFunction,
-  ): Promise<void> => {
+  return async (_req: Request, _res: Response, next: NextFunction): Promise<void> => {
     if (isRedisReady()) {
       const targetPattern = `cache:GET:${routePrefix}*`;
       await clearCacheByPattern(targetPattern);
