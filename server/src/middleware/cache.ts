@@ -3,7 +3,11 @@ import { redis } from "../lib/redis";
 
 export const cacheMiddleware = (keyPrefix: string, ttlSeconds = 300) => {
   return async (req: Request, res: Response, next: NextFunction) => {
-    // Construct cache key based on route parameters or query strings
+    // Bypass cache immediately if Redis is not connected
+    if (redis.status !== "ready") {
+      return next();
+    }
+
     const cacheKey = `${keyPrefix}:${req.originalUrl || req.url}`;
 
     try {
@@ -16,15 +20,16 @@ export const cacheMiddleware = (keyPrefix: string, ttlSeconds = 300) => {
 
       res.setHeader("X-Cache", "MISS");
 
-      // Intercept res.json to capture response payload and write to Redis
       const originalJson = res.json.bind(res);
       res.json = (body: unknown) => {
-        if (res.statusCode >= 200 && res.statusCode < 300) {
-          redis
-            .setex(cacheKey, ttlSeconds, JSON.stringify(body))
-            .catch((err) => {
-              console.error("Redis set cache error:", err);
-            });
+        if (
+          res.statusCode >= 200 &&
+          res.statusCode < 300 &&
+          redis.status === "ready"
+        ) {
+          redis.setex(cacheKey, ttlSeconds, JSON.stringify(body)).catch(() => {
+            // Ignore write errors if offline
+          });
         }
         return originalJson(body);
       };
@@ -38,6 +43,8 @@ export const cacheMiddleware = (keyPrefix: string, ttlSeconds = 300) => {
 };
 
 export const invalidateCachePattern = async (pattern: string) => {
+  if (redis.status !== "ready") return;
+
   try {
     const keys = await redis.keys(pattern);
     if (keys.length > 0) {
