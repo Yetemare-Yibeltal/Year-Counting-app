@@ -5,20 +5,20 @@ const redisUrl = process.env.REDIS_URL || "redis://127.0.0.1:6379";
 export const redisClient = new Redis(redisUrl, {
   maxRetriesPerRequest: null,
   enableOfflineQueue: false,
-  lazyConnect: true,
+  showFriendlyErrorStack: true,
+  retryStrategy(times) {
+    // Stop reconnecting attempts immediately when offline
+    return null;
+  },
 });
 
-redisClient.on("error", () => {
-  // Redis is optional during local development.
+redisClient.on("error", (err) => {
+  // Gracefully log warning without letting the error bubble up to crash Node
+  console.warn("⚠️ Redis offline. Cache layer bypassed.");
 });
 
-export const connectRedis = async (): Promise<boolean> => {
-  try {
-    await redisClient.connect();
-    console.log("✅ Redis connected");
-    return true;
-  } catch {
-    console.warn("⚠️ Redis unavailable — continuing without Redis");
-    return false;
-  }
-};
+redisClient.on("connect", () => {
+  console.log("✅ Connected to Redis successfully.");
+});
+
+export default redisClient;
