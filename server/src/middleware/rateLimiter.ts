@@ -24,11 +24,9 @@ export const createCustomRateLimiter = (
     config?.message ?? "Too many requests. Please try again later.";
 
   const redisStore = new RedisStore({
-    sendCommand: async (...args: string[]) => {
+    sendCommand: async (...args: string[]): Promise<any> => {
       if (!isRedisReady()) {
-        throw new Error(
-          "Redis store offline - bypassing rate limit checks"
-        );
+        throw new Error("Redis store offline");
       }
 
       const [command, ...commandArgs] = args;
@@ -37,7 +35,10 @@ export const createCustomRateLimiter = (
         throw new Error("Redis command is missing");
       }
 
-      return redis.call(command, ...commandArgs);
+      return redis.call(
+        command,
+        ...(commandArgs as string[])
+      );
     },
   });
 
@@ -48,7 +49,7 @@ export const createCustomRateLimiter = (
     standardHeaders: "draft-7",
     legacyHeaders: false,
 
-    // Continue serving requests if Redis is unavailable.
+    // Allow requests to continue if Redis is unavailable.
     passOnStoreError: true,
 
     store: redisStore,
@@ -63,7 +64,7 @@ export const createCustomRateLimiter = (
       _next: NextFunction,
       options: Options
     ) => {
-      const responseStatusCode = options.statusCode || statusCode;
+      const responseStatusCode = options.statusCode ?? statusCode;
 
       res.status(responseStatusCode).json({
         status: "error",
