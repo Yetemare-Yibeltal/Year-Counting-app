@@ -1,26 +1,27 @@
 import { Request, Response, NextFunction, RequestHandler } from "express";
-import { redis, isRedisReady } from "../lib/redis";
+import { redis, isRedisReady, safeRedisFlushPattern } from "../lib/redis";
 
-export interface CacheOptions {
+export interface CacheMiddlewareOptions {
   ttlInSeconds: number;
-  keyPrefix?: string;
-  excludeRoutes?: string[];
+  prefix?: string;
+  excludeQueryParams?: string[];
 }
 
-export interface CachedResponsePayload {
+export interface CachedResponseStructure {
   status: number;
-  headers: Record<string, string | string[] | undefined>;
+  contentType?: string;
   body: unknown;
+  cachedAt: string;
 }
 
-const buildCacheKey = (req: Request, prefix: string = "cache"): string => {
-  const routeUrl = req.originalUrl || req.url;
-  return `${prefix}:${req.method}:${routeUrl}`;
+const generateCacheKey = (req: Request, prefix: string = "cache"): string => {
+  const urlPath = req.originalUrl || req.url;
+  return `${prefix}:${req.method}:${urlPath}`;
 };
 
 export const cacheMiddleware = (
   ttlInSeconds: number,
-  customPrefix: string = "cache",
+  prefix: string = "cache",
 ): RequestHandler => {
   return async (
     req: Request,
@@ -32,64 +33,53 @@ export const cacheMiddleware = (
     }
 
     if (!isRedisReady()) {
+      res.setHeader("X-Cache-Status", "BYPASS-OFFLINE");
       return next();
     }
 
-    const key = buildCacheKey(req, customPrefix);
+    const key = generateCacheKey(req, prefix);
 
     try {
-      const cachedRawData = await redis.get(key);
+      const cachedContent = await redis.get(key);
 
-      if (cachedRawData) {
-        const parsedPayload: CachedResponsePayload = JSON.parse(cachedRawData);
-        res.status(parsedPayload.status);
+      if (cachedContent) {
+        const parsedPayload: CachedResponseStructure =
+          JSON.parse(cachedContent);
         res.setHeader("X-Cache-Status", "HIT");
-
-        if (parsedPayload.headers) {
-          Object.entries(parsedPayload.headers).forEach(
-            ([headerName, headerValue]) => {
-              if (headerValue !== undefined) {
-                res.setHeader(headerName, headerValue);
-              }
-            },
-          );
+        if (parsedPayload.contentType) {
+          res.setHeader("Content-Type", parsedPayload.contentType);
         }
-
-        res.json(parsedPayload.body);
+        res.status(parsedPayload.status).json(parsedPayload.body);
         return;
       }
-    } catch (cacheFetchError) {
-      console.warn(
-        `[Cache Error] Failed reading cache key "${key}":`,
-        cacheFetchError,
-      );
+    } catch (readError) {
+      console.warn(`[Cache Layer Read Failure] Key "${key}":`, readError);
     }
 
     res.setHeader("X-Cache-Status", "MISS");
 
     const originalJson = res.json.bind(res);
 
-    res.json = ((body: unknown): Response => {
+    res.json = ((data: unknown): Response => {
       if (res.statusCode >= 200 && res.statusCode < 300 && isRedisReady()) {
-        const payloadToCache: CachedResponsePayload = {
+        const payloadToCache: CachedResponseStructure = {
           status: res.statusCode,
-          headers: {
-            "content-type": res.getHeader("content-type") as string | undefined,
-          },
-          body,
+          contentType: res.getHeader("content-type") as string | undefined,
+          body: data,
+          cachedAt: new Date().toISOString(),
         };
 
         redis
           .setex(key, ttlInSeconds, JSON.stringify(payloadToCache))
-          .catch((cacheSetError) => {
+          .catch((writeError) => {
             console.warn(
-              `[Cache Error] Failed writing cache key "${key}":`,
-              cacheSetError,
+              `[Cache Layer Write Failure] Key "${key}":`,
+              writeError,
             );
           });
       }
 
-      return originalJson(body);
+      return originalJson(data);
     }) as Response["json"];
 
     next();
@@ -97,24 +87,7 @@ export const cacheMiddleware = (
 };
 
 export const clearCacheByPattern = async (pattern: string): Promise<number> => {
-  if (!isRedisReady()) {
-    return 0;
-  }
-
-  try {
-    const matchedKeys = await redis.keys(pattern);
-    if (matchedKeys.length > 0) {
-      const deletedCount = await redis.del(...matchedKeys);
-      return deletedCount;
-    }
-    return 0;
-  } catch (error) {
-    console.warn(
-      `[Cache Invalidation Error] Failed deleting keys for pattern "${pattern}":`,
-      error,
-    );
-    return 0;
-  }
+  return await safeRedisFlushPattern(pattern);
 };
 
 export const invalidateRouteCache = (routePrefix: string): RequestHandler => {
@@ -124,9 +97,11 @@ export const invalidateRouteCache = (routePrefix: string): RequestHandler => {
     next: NextFunction,
   ): Promise<void> => {
     if (isRedisReady()) {
-      const pattern = `cache:GET:${routePrefix}*`;
-      await clearCacheByPattern(pattern);
+      const targetPattern = `cache:GET:${routePrefix}*`;
+      await clearCacheByPattern(targetPattern);
     }
     next();
   };
 };
+
+export default cacheMiddleware;
