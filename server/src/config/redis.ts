@@ -5,11 +5,20 @@ const redisUrl = process.env.REDIS_URL || "redis://127.0.0.1:6379";
 export const redisClient = new Redis(redisUrl, {
   maxRetriesPerRequest: null,
   enableOfflineQueue: false,
-  retryStrategy() {
-    return null; // Stop retrying immediately if Redis is unreachable
-  },
+  lazyConnect: true,
 });
 
 redisClient.on("error", () => {
-  // Silent fallback for development
+  // Redis is optional during local development.
 });
+
+export const connectRedis = async (): Promise<boolean> => {
+  try {
+    await redisClient.connect();
+    console.log("✅ Redis connected");
+    return true;
+  } catch {
+    console.warn("⚠️ Redis unavailable — continuing without Redis");
+    return false;
+  }
+};
