@@ -81,7 +81,7 @@ export const SystemSpecs: React.FC = () => {
               <div className="text-gray-300">import cors from "cors";</div>
               <div className="text-gray-300">import helmet from "helmet";</div>
               <div className="text-gray-400 pt-2">// Middleware registration</div>
-              <div className="text-emerald-400">app.use(cors({ origin: "http://localhost:5173" }));</div>
+              <div className="text-emerald-400">{"app.use(cors({ origin: 'http://localhost:5173' }));"}</div>
               <div className="text-emerald-400">app.use(helmet());</div>
             </div>
           </div>
