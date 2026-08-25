@@ -1,91 +1,159 @@
-import React, { useEffect, useState } from "react";
-
-interface HealthData {
-  status: string;
-  timestamp: string;
-  services: {
-    database: string;
-    redis: string;
-    redisLatencyMs?: number;
-  };
-}
+import React, { useState } from "react";
 
 export const SystemSpecs: React.FC = () => {
-  const [health, setHealth] = useState<HealthData | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-
-  useEffect(() => {
-    fetch("http://localhost:5000/health")
-      .then((res) => res.json())
-      .then((data) => {
-        setHealth(data);
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
-  }, []);
+  const [activeSection, setActiveSection] = useState<"frontend" | "backend" | "database" | "security" | "api_docs">("frontend");
 
   return (
-    <div className="max-w-7xl mx-auto p-6 space-y-8 text-slate-100">
-      <div>
-        <h1 className="text-2xl font-bold text-white mb-2">System Diagnostics & Infrastructure Specs</h1>
-        <p className="text-slate-400 text-sm">Live telemetry for engine runtime, caching adapters, and database connections.</p>
+    <div className="space-y-8">
+      <div className="border-b border-gray-800 pb-6">
+        <h1 className="text-3xl font-extrabold text-white">Full-Stack Architecture & System Specifications</h1>
+        <p className="text-xs sm:text-sm text-gray-400 mt-2">
+          Comprehensive technical specification detailing client state orchestration, REST API routes, Prisma ORM schemas, and Redis caching policies.
+        </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-slate-900 border border-slate-800 p-6 rounded-xl">
-          <div className="text-xs text-slate-400 uppercase tracking-wider font-semibold">Node Engine Environment</div>
-          <div className="text-xl font-bold text-white mt-2">Node.js v22.20.0</div>
-          <div className="text-xs text-slate-500 mt-1">Runtime: Express / tsx Watch Engine</div>
-        </div>
-
-        <div className="bg-slate-900 border border-slate-800 p-6 rounded-xl">
-          <div className="text-xs text-slate-400 uppercase tracking-wider font-semibold">Database Service</div>
-          <div className="text-xl font-bold text-emerald-400 mt-2">
-            {loading ? "Checking..." : health?.services?.database || "Disconnected"}
-          </div>
-          <div className="text-xs text-slate-500 mt-1">ORM: Prisma Client v5.22.0</div>
-        </div>
-
-        <div className="bg-slate-900 border border-slate-800 p-6 rounded-xl">
-          <div className="text-xs text-slate-400 uppercase tracking-wider font-semibold">Redis Cache Adapter</div>
-          <div className="text-xl font-bold text-indigo-400 mt-2">
-            {loading ? "Checking..." : health?.services?.redis || "Offline (Fallback Active)"}
-          </div>
-          <div className="text-xs text-slate-500 mt-1">Strategy: Safe Bypass & Memory Fallback</div>
-        </div>
+      <div className="flex flex-wrap gap-2 border-b border-gray-800 pb-4">
+        {[
+          { id: "frontend", label: "Client Engine (React/TS)" },
+          { id: "backend", label: "API Pipeline (Express/Node)" },
+          { id: "database", label: "Data Schema (Prisma ORM)" },
+          { id: "security", label: "Security & Caching" },
+          { id: "api_docs", label: "REST Endpoint Docs" },
+        ].map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            onClick={() => setActiveSection(tab.id as any)}
+            className={`px-4 py-2 text-xs sm:text-sm font-semibold rounded-lg transition-all ${
+              activeSection === tab.id
+                ? "bg-indigo-600 text-white shadow-lg shadow-indigo-500/20"
+                : "bg-gray-900 text-gray-400 hover:text-white hover:bg-gray-800"
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
       </div>
 
-      {/* System Configurations Table */}
-      <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
-        <h2 className="text-lg font-semibold text-slate-200 mb-4">Application Environment Blueprint</h2>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm text-slate-300">
-            <thead className="bg-slate-950 text-slate-400 uppercase text-xs font-mono">
-              <tr>
-                <th className="p-3">Module</th>
-                <th className="p-3">Configuration</th>
-                <th className="p-3">Status / Mode</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-800 font-mono">
-              <tr>
-                <td className="p-3 text-white">Rate Limiter</td>
-                <td className="p-3">100 req / 15 min</td>
-                <td className="p-3 text-emerald-400">Active (Fail-Open)</td>
-              </tr>
-              <tr>
-                <td className="p-3 text-white">Response Caching</td>
-                <td className="p-3">Dynamic Key Invalidation</td>
-                <td className="p-3 text-indigo-400">Ready</td>
-              </tr>
-              <tr>
-                <td className="p-3 text-white">API Health Route</td>
-                <td className="p-3">GET /health</td>
-                <td className="p-3 text-emerald-400">200 OK</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+      <div className="bg-gray-900 border border-gray-800 p-6 sm:p-8 rounded-2xl shadow-xl">
+        {activeSection === "frontend" && (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-xl font-bold text-indigo-400">Frontend Client Architecture</h2>
+              <p className="text-xs text-gray-400 mt-1">Single Page Application (SPA) driven by React 18, Vite build pipelines, and Tailwind CSS.</p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="bg-gray-950 p-4 rounded-xl border border-gray-800">
+                <div className="text-xs font-semibold text-gray-400">Rendering Engine</div>
+                <div className="text-sm font-bold text-white mt-1">React 18 Concurrent Root</div>
+                <p className="text-[11px] text-gray-500 mt-2">Utilizes concurrent transitions and state batching for continuous live timer updates without UI blocking.</p>
+              </div>
+              <div className="bg-gray-950 p-4 rounded-xl border border-gray-800">
+                <div className="text-xs font-semibold text-gray-400">Type Safety</div>
+                <div className="text-sm font-bold text-white mt-1">TypeScript 5 Strict Mode</div>
+                <p className="text-[11px] text-gray-500 mt-2">Strict type definitions for health payloads, date states, and calculator interfaces.</p>
+              </div>
+              <div className="bg-gray-950 p-4 rounded-xl border border-gray-800">
+                <div className="text-xs font-semibold text-gray-400">Client Navigation</div>
+                <div className="text-sm font-bold text-white mt-1">React Router v6 DOM</div>
+                <p className="text-[11px] text-gray-500 mt-2">Declarative client routes with path-based state isolation.</p>
+              </div>
+              <div className="bg-gray-950 p-4 rounded-xl border border-gray-800">
+                <div className="text-xs font-semibold text-gray-400">Design System</div>
+                <div className="text-sm font-bold text-white mt-1">Tailwind CSS Utility Engine</div>
+                <p className="text-[11px] text-gray-500 mt-2">JIT compiled styling with customizable dark mode palettes.</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeSection === "backend" && (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-xl font-bold text-purple-400">Node.js REST Services</h2>
+              <p className="text-xs text-gray-400 mt-1">Non-blocking express server handling API requests, health checks, and database telemetry.</p>
+            </div>
+
+            <div className="bg-gray-950 p-4 rounded-xl border border-gray-800 font-mono text-xs space-y-3">
+              <div className="text-indigo-400">// Server Initialization & Middleware Architecture</div>
+              <div className="text-gray-300">import express from "express";</div>
+              <div className="text-gray-300">import cors from "cors";</div>
+              <div className="text-gray-300">import helmet from "helmet";</div>
+              <div className="text-gray-400 pt-2">// Middleware registration</div>
+              <div className="text-emerald-400">app.use(cors({ origin: "http://localhost:5173" }));</div>
+              <div className="text-emerald-400">app.use(helmet());</div>
+            </div>
+          </div>
+        )}
+
+        {activeSection === "database" && (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-xl font-bold text-pink-400">Prisma ORM & Persistence Schema</h2>
+              <p className="text-xs text-gray-400 mt-1">Declarative data modeling targeting relational engines (PostgreSQL / SQLite).</p>
+            </div>
+
+            <div className="bg-gray-950 p-4 rounded-xl border border-gray-800 font-mono text-xs space-y-2 overflow-x-auto">
+              <div className="text-gray-500">// prisma/schema.prisma</div>
+              <div className="text-purple-400">model SystemLog &#123;</div>
+              <div className="text-gray-300 pl-4">id        String   @id @default(uuid())</div>
+              <div className="text-gray-300 pl-4">status    String</div>
+              <div className="text-gray-300 pl-4">timestamp DateTime @default(now())</div>
+              <div className="text-gray-300 pl-4">latencyMs Int</div>
+              <div className="text-purple-400">&#125;</div>
+            </div>
+          </div>
+        )}
+
+        {activeSection === "security" && (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-xl font-bold text-emerald-400">Security Policies & In-Memory Redis Caching</h2>
+              <p className="text-xs text-gray-400 mt-1">Rate limiting, CORS validation, and high-performance caching layers.</p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="bg-gray-950 p-4 rounded-xl border border-gray-800">
+                <div className="text-xs font-semibold text-gray-400">Cache Layer</div>
+                <div className="text-sm font-bold text-white mt-1">Redis Key-Value Cache</div>
+                <p className="text-[11px] text-gray-500 mt-2">Caches heavy analytical query results with automatic TTL expiration.</p>
+              </div>
+              <div className="bg-gray-950 p-4 rounded-xl border border-gray-800">
+                <div className="text-xs font-semibold text-gray-400">Abuse Protection</div>
+                <div className="text-sm font-bold text-white mt-1">express-rate-limit</div>
+                <p className="text-[11px] text-gray-500 mt-2">Restricts endpoint calls to 100 requests per 15-minute window per IP.</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeSection === "api_docs" && (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-xl font-bold text-amber-400">REST API Reference Specification</h2>
+              <p className="text-xs text-gray-400 mt-1">Formal schema definitions for server communication endpoints.</p>
+            </div>
+
+            <div className="space-y-4">
+              <div className="bg-gray-950 p-4 rounded-xl border border-gray-800 space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-mono font-bold">GET</span>
+                  <span className="font-mono text-sm text-white">/health</span>
+                </div>
+                <p className="text-xs text-gray-400">Returns server availability, uptime metrics, and downstream service connectivity status.</p>
+              </div>
+
+              <div className="bg-gray-950 p-4 rounded-xl border border-gray-800 space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="px-2 py-0.5 rounded bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-mono font-bold">GET</span>
+                  <span className="font-mono text-sm text-white">/api/v1/year-metrics</span>
+                </div>
+                <p className="text-xs text-gray-400">Returns precomputed leap adjustments, total days, and quarterly offsets.</p>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
