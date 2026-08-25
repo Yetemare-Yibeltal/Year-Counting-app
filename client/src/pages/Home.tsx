@@ -88,7 +88,7 @@ export const Home: React.FC = () => {
             </div>
           </section>
 
-          {/* Section 1: Live Progress Tracker */}
+          {/* Live Progress Tracker Section */}
           <section id="live-tracker" className="scroll-mt-20 space-y-4">
             <div className="flex justify-between items-end border-b border-gray-800 pb-3">
               <div>
@@ -99,27 +99,24 @@ export const Home: React.FC = () => {
             <YearProgressBar />
           </section>
 
-          {/* Section 2: Calculator Suite */}
+          {/* Calculator Suite Section */}
           <section id="calculator" className="scroll-mt-20 bg-gray-900/90 border border-gray-800 rounded-2xl p-6 sm:p-8 shadow-2xl space-y-6">
-            <div className="border-b border-gray-800 pb-4 flex flex-col sm:flex-row justify-between sm:items-center gap-2">
-              <div>
-                <h2 className="text-2xl font-bold text-white tracking-tight">2. Date & Age Calculator Suite</h2>
-                <p className="text-xs text-gray-400 mt-1">
-                  Perform exact temporal duration analysis across custom intervals, years, months, and days.
-                </p>
-              </div>
+            <div className="border-b border-gray-800 pb-4">
+              <h2 className="text-2xl font-bold text-white tracking-tight">2. Date & Age Calculator Suite</h2>
+              <p className="text-xs text-gray-400 mt-1">
+                Perform exact temporal duration analysis across custom intervals, years, months, and days.
+              </p>
             </div>
             <AgeCalculatorView />
           </section>
 
-          {/* Section 3: Interactive System Specs */}
+          {/* Interactive System Specs Section */}
           <section id="architecture" className="scroll-mt-20 space-y-6">
             <div className="text-center space-y-2">
               <h2 className="text-2xl font-bold text-white">3. System Architecture & Tech Stack</h2>
               <p className="text-xs text-gray-400">Formal technical breakdown of computation, caching, and database layers.</p>
             </div>
 
-            {/* Interactive Tab Switcher */}
             <div className="flex justify-center gap-2 border-b border-gray-800 pb-4">
               <button
                 onClick={() => setActiveTab("client")}
@@ -153,7 +150,6 @@ export const Home: React.FC = () => {
               </button>
             </div>
 
-            {/* Dynamic Tab Content */}
             <div className="bg-gray-900 border border-gray-800 p-6 sm:p-8 rounded-2xl shadow-xl">
               {activeTab === "client" && (
                 <div className="space-y-4">
@@ -216,7 +212,6 @@ export const Home: React.FC = () => {
         </main>
       </div>
 
-      {/* Production Footer */}
       <footer className="border-t border-gray-800 bg-gray-900/40 py-8 mt-16 text-xs text-gray-500">
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p>© {new Date().getFullYear()} YearCounter Platform. Distributed under open utility license.</p>
