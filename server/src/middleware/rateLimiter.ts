@@ -22,17 +22,13 @@ export const createCustomRateLimiter = (
   const customMessage =
     config?.message || "Too many requests. Please try again later.";
 
-  const redisStore = new RedisStore({
-    // @ts-expect-error - ioredis type compatibility with rate-limit-redis
-    sendCommand: (...args: string[]) => {
-      if (!isRedisReady()) {
-        return Promise.reject(
-          new Error("Redis store offline - bypassing rate limit checks"),
-        );
-      }
-      return redis.call(...args);
-    },
-  });
+  // Use RedisStore if connected; fallback cleanly to express-rate-limit memory store
+  const store = isRedisReady()
+    ? new RedisStore({
+        // @ts-expect-error - ioredis type compatibility with rate-limit-redis
+        sendCommand: (...args: string[]) => redis.call(...args),
+      })
+    : undefined;
 
   const limiterOptions: Partial<Options> = {
     windowMs,
@@ -40,7 +36,7 @@ export const createCustomRateLimiter = (
     standardHeaders: "draft-7",
     legacyHeaders: false,
     passOnStoreError: true,
-    store: redisStore,
+    ...(store && { store }),
     keyGenerator: (req: Request): string => {
       return req.ip || req.socket.remoteAddress || "unknown-client";
     },
