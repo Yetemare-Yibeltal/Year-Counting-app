@@ -1,23 +1,13 @@
-import { Router } from "express";
-import { getUsers } from "../controllers/userController";
-import { authenticate } from "../middleware/authMiddleware";
-import { cacheMiddleware } from "../middleware/cache";
-
-const router = Router();
-
-router.route("/").get(authenticate, cacheMiddleware("300s"), getUsers);
-
-export default router;
 import { Router, Request, Response, NextFunction } from "express";
 import { prisma } from "../lib/prisma";
 import { cacheMiddleware, invalidateRouteCache } from "../middleware/cache";
 
 const router = Router();
 
-// Get all users with 60-second caching
+// GET /api/users (caches for 300 seconds)
 router.get(
   "/",
-  cacheMiddleware(60, "users"),
+  cacheMiddleware(300, "users"),
   async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const users = await prisma.user.findMany({
@@ -35,7 +25,7 @@ router.get(
   },
 );
 
-// Get user by ID with 120-second caching
+// GET /api/users/:id (caches for 120 seconds)
 router.get(
   "/:id",
   cacheMiddleware(120, "users"),
@@ -64,7 +54,7 @@ router.get(
   },
 );
 
-// Invalidate user cache when modifying user data
+// PUT /api/users/:id (invalidates user cache)
 router.put(
   "/:id",
   invalidateRouteCache("/api/users"),
