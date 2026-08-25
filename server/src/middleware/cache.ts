@@ -83,7 +83,9 @@ export const cacheMiddleware = (
   };
 };
 
-export const clearCacheByPattern = async (pattern: string): Promise<number> => {
+export const invalidateCachePattern = async (
+  pattern: string,
+): Promise<number> => {
   return await safeRedisFlushPattern(pattern);
 };
 
@@ -95,7 +97,7 @@ export const invalidateRouteCache = (routePrefix: string): RequestHandler => {
   ): Promise<void> => {
     if (isRedisReady()) {
       const targetPattern = `cache:GET:${routePrefix}*`;
-      await clearCacheByPattern(targetPattern);
+      await invalidateCachePattern(targetPattern);
     }
     next();
   };
