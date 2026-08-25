@@ -3,27 +3,32 @@ import { rateLimit, Options } from "express-rate-limit";
 import RedisStore from "rate-limit-redis";
 import { redis, isRedisReady } from "../lib/redis";
 
-export interface RateLimiterOptions {
+export interface CustomRateLimiterConfig {
   windowMs?: number;
   limit?: number;
   message?: string;
+  statusCode?: number;
+  keyGenerator?: (req: Request) => string;
 }
 
 const DEFAULT_WINDOW_MS = 15 * 60 * 1000;
 const DEFAULT_LIMIT = 100;
 
 export const createCustomRateLimiter = (
-  options?: RateLimiterOptions,
+  config?: CustomRateLimiterConfig,
 ): RequestHandler => {
-  const windowMs = options?.windowMs || DEFAULT_WINDOW_MS;
-  const limit = options?.limit || DEFAULT_LIMIT;
+  const windowMs = config?.windowMs || DEFAULT_WINDOW_MS;
+  const limit = config?.limit || DEFAULT_LIMIT;
+  const statusCode = config?.statusCode || 429;
+  const customMessage =
+    config?.message || "Too many requests. Please slow down.";
 
   const redisStore = new RedisStore({
     // @ts-expect-error - ioredis type compatibility with rate-limit-redis
     sendCommand: (...args: string[]) => {
       if (!isRedisReady()) {
         return Promise.reject(
-          new Error("Redis store unavailable - bypassing rate limiter"),
+          new Error("Redis offline - rate limiter bypassing store"),
         );
       }
       return redis.call(...args);
@@ -37,21 +42,23 @@ export const createCustomRateLimiter = (
     legacyHeaders: false,
     passOnStoreError: true,
     store: redisStore,
+    keyGenerator: config?.keyGenerator
+      ? config.keyGenerator
+      : (req: Request): string => {
+          return req.ip || req.socket.remoteAddress || "unknown-client";
+        },
     handler: (
       req: Request,
       res: Response,
       _next: NextFunction,
       options: Options,
     ) => {
-      res.status(options.statusCode).json({
+      res.status(options.statusCode || statusCode).json({
         status: "error",
-        statusCode: options.statusCode,
-        message:
-          options.message || "Too many requests, please try again later.",
+        statusCode: options.statusCode || statusCode,
+        message: customMessage,
+        retryAfterSeconds: Math.ceil(options.windowMs / 1000),
       });
-    },
-    skip: (_req: Request) => {
-      return false;
     },
   };
 
@@ -61,11 +68,13 @@ export const createCustomRateLimiter = (
 export const globalLimiter = createCustomRateLimiter({
   windowMs: 15 * 60 * 1000,
   limit: 100,
+  message: "Global rate limit exceeded. Try again in 15 minutes.",
 });
 
 export const authLimiter = createCustomRateLimiter({
   windowMs: 15 * 60 * 1000,
-  limit: 15,
+  limit: 10,
+  message: "Too many authentication attempts. Please wait 15 minutes.",
 });
 
 export const apiRateLimiter = globalLimiter;
