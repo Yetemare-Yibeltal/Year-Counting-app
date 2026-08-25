@@ -1,19 +1,8 @@
 import Redis, { RedisOptions, RedisKey, RedisValue } from "ioredis";
 
-export interface RedisConfigOptions {
-  url?: string;
-  host?: string;
-  port?: number;
-  password?: string;
-  db?: number;
-}
-
 export interface RedisHealthStatus {
-  status: "connected" | "disconnected" | "reconnecting" | "error";
+  status: "connected" | "disconnected" | "error";
   latencyMs: number | null;
-  uptimeSeconds: number | null;
-  connectedClients: number | null;
-  memoryUsedHuman: string | null;
   errorDetail?: string;
 }
 
@@ -30,8 +19,7 @@ const connectionOptions: RedisOptions = REDIS_URL
       maxRetriesPerRequest: null,
       lazyConnect: false,
       retryStrategy(times: number) {
-        const delay = Math.min(times * 100, 3000);
-        return delay;
+        return Math.min(times * 100, 3000);
       },
     }
   : {
@@ -43,8 +31,7 @@ const connectionOptions: RedisOptions = REDIS_URL
       maxRetriesPerRequest: null,
       lazyConnect: false,
       retryStrategy(times: number) {
-        const delay = Math.min(times * 100, 3000);
-        return delay;
+        return Math.min(times * 100, 3000);
       },
     };
 
@@ -54,29 +41,25 @@ const createRedisClient = (): Redis => {
     : new Redis(connectionOptions);
 
   client.on("connect", () => {
-    console.log("[Redis Engine] Connection handshake initiated.");
+    console.log("[Redis] Initiating connection handshake...");
   });
 
   client.on("ready", () => {
-    console.log("[Redis Engine] Ready to execute commands.");
+    console.log("[Redis] Client connected and ready.");
   });
 
   client.on("error", (error: Error) => {
     console.warn(
-      `[Redis Engine Warning] Offline or degraded: ${error.message}`,
+      `[Redis Warning] Running in offline/degraded mode: ${error.message}`,
     );
   });
 
   client.on("close", () => {
-    console.warn("[Redis Engine] Connection closed.");
+    console.warn("[Redis] Connection closed.");
   });
 
   client.on("reconnecting", (delay: number) => {
-    console.log(`[Redis Engine] Reconnecting in ${delay}ms...`);
-  });
-
-  client.on("end", () => {
-    console.warn("[Redis Engine] Connection terminated.");
+    console.log(`[Redis] Reconnecting in ${delay}ms...`);
   });
 
   return client;
@@ -89,16 +72,11 @@ export const isRedisReady = (): boolean => {
 };
 
 export const safeRedisGet = async (key: RedisKey): Promise<string | null> => {
-  if (!isRedisReady()) {
-    return null;
-  }
+  if (!isRedisReady()) return null;
   try {
     return await redis.get(key);
   } catch (error) {
-    console.warn(
-      `[Redis Safe Get Error] Failed for key "${String(key)}":`,
-      error,
-    );
+    console.warn(`[Redis Safe GET Error] Key "${String(key)}":`, error);
     return null;
   }
 };
@@ -108,32 +86,22 @@ export const safeRedisSetEx = async (
   seconds: number,
   value: RedisValue,
 ): Promise<boolean> => {
-  if (!isRedisReady()) {
-    return false;
-  }
+  if (!isRedisReady()) return false;
   try {
     await redis.setex(key, seconds, value);
     return true;
   } catch (error) {
-    console.warn(
-      `[Redis Safe SetEx Error] Failed for key "${String(key)}":`,
-      error,
-    );
+    console.warn(`[Redis Safe SETEX Error] Key "${String(key)}":`, error);
     return false;
   }
 };
 
 export const safeRedisDel = async (...keys: RedisKey[]): Promise<number> => {
-  if (!isRedisReady() || keys.length === 0) {
-    return 0;
-  }
+  if (!isRedisReady() || keys.length === 0) return 0;
   try {
     return await redis.del(...keys);
   } catch (error) {
-    console.warn(
-      `[Redis Safe Del Error] Failed for keys "${keys.join(", ")}":`,
-      error,
-    );
+    console.warn(`[Redis Safe DEL Error] Keys "${keys.join(", ")}":`, error);
     return 0;
   }
 };
@@ -141,9 +109,7 @@ export const safeRedisDel = async (...keys: RedisKey[]): Promise<number> => {
 export const safeRedisFlushPattern = async (
   pattern: string,
 ): Promise<number> => {
-  if (!isRedisReady()) {
-    return 0;
-  }
+  if (!isRedisReady()) return 0;
   try {
     const keys = await redis.keys(pattern);
     if (keys.length > 0) {
@@ -151,60 +117,31 @@ export const safeRedisFlushPattern = async (
     }
     return 0;
   } catch (error) {
-    console.warn(
-      `[Redis Safe Flush Error] Failed for pattern "${pattern}":`,
-      error,
-    );
+    console.warn(`[Redis Safe Flush Error] Pattern "${pattern}":`, error);
     return 0;
   }
 };
 
-export const getRedisHealth = async (): Promise<RedisHealthStatus> => {
+export const checkRedisHealth = async (): Promise<RedisHealthStatus> => {
   if (!isRedisReady()) {
-    return {
-      status: "disconnected",
-      latencyMs: null,
-      uptimeSeconds: null,
-      connectedClients: null,
-      memoryUsedHuman: null,
-    };
+    return { status: "disconnected", latencyMs: null };
   }
-
   const startTime = Date.now();
   try {
     const pingResult = await redis.ping();
     const latencyMs = Date.now() - startTime;
-
-    if (pingResult !== "PONG") {
-      return {
-        status: "error",
-        latencyMs,
-        uptimeSeconds: null,
-        connectedClients: null,
-        memoryUsedHuman: null,
-        errorDetail: "Ping did not return PONG response",
-      };
+    if (pingResult === "PONG") {
+      return { status: "connected", latencyMs };
     }
-
-    const info = await redis.info();
-    const uptimeMatch = info.match(/uptime_in_seconds:(\d+)/);
-    const clientsMatch = info.match(/connected_clients:(\d+)/);
-    const memoryMatch = info.match(/used_memory_human:(.+)/);
-
     return {
-      status: "connected",
+      status: "error",
       latencyMs,
-      uptimeSeconds: uptimeMatch ? parseInt(uptimeMatch[1], 10) : null,
-      connectedClients: clientsMatch ? parseInt(clientsMatch[1], 10) : null,
-      memoryUsedHuman: memoryMatch ? memoryMatch[1].trim() : null,
+      errorDetail: "Invalid response from Redis server",
     };
   } catch (error) {
     return {
-      status: "error",
+      status: "disconnected",
       latencyMs: Date.now() - startTime,
-      uptimeSeconds: null,
-      connectedClients: null,
-      memoryUsedHuman: null,
       errorDetail: error instanceof Error ? error.message : String(error),
     };
   }
