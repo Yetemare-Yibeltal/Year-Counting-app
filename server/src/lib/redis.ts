@@ -19,7 +19,7 @@ const connectionOptions: RedisOptions = REDIS_URL
       maxRetriesPerRequest: null,
       lazyConnect: false,
       retryStrategy(times: number) {
-        return Math.min(times * 100, 3000);
+        return Math.min(times * 1000, 10000);
       },
     }
   : {
@@ -31,7 +31,7 @@ const connectionOptions: RedisOptions = REDIS_URL
       maxRetriesPerRequest: null,
       lazyConnect: false,
       retryStrategy(times: number) {
-        return Math.min(times * 100, 3000);
+        return Math.min(times * 1000, 10000);
       },
     };
 
@@ -40,26 +40,12 @@ const createRedisClient = (): Redis => {
     ? new Redis(REDIS_URL, connectionOptions)
     : new Redis(connectionOptions);
 
-  client.on("connect", () => {
-    console.log("[Redis] Initiating connection handshake...");
-  });
-
   client.on("ready", () => {
     console.log("[Redis] Client connected and ready.");
   });
 
-  client.on("error", (error: Error) => {
-    console.warn(
-      `[Redis Warning] Running in offline/degraded mode: ${error.message}`,
-    );
-  });
-
-  client.on("close", () => {
-    console.warn("[Redis] Connection closed.");
-  });
-
-  client.on("reconnecting", (delay: number) => {
-    console.log(`[Redis] Reconnecting in ${delay}ms...`);
+  client.on("error", (_error: Error) => {
+    // Silent catch during offline retry cycles to avoid process noise
   });
 
   return client;
@@ -75,8 +61,7 @@ export const safeRedisGet = async (key: RedisKey): Promise<string | null> => {
   if (!isRedisReady()) return null;
   try {
     return await redis.get(key);
-  } catch (error) {
-    console.warn(`[Redis Safe GET Error] Key "${String(key)}":`, error);
+  } catch {
     return null;
   }
 };
@@ -90,8 +75,7 @@ export const safeRedisSetEx = async (
   try {
     await redis.setex(key, seconds, value);
     return true;
-  } catch (error) {
-    console.warn(`[Redis Safe SETEX Error] Key "${String(key)}":`, error);
+  } catch {
     return false;
   }
 };
@@ -100,8 +84,7 @@ export const safeRedisDel = async (...keys: RedisKey[]): Promise<number> => {
   if (!isRedisReady() || keys.length === 0) return 0;
   try {
     return await redis.del(...keys);
-  } catch (error) {
-    console.warn(`[Redis Safe DEL Error] Keys "${keys.join(", ")}":`, error);
+  } catch {
     return 0;
   }
 };
@@ -116,8 +99,7 @@ export const safeRedisFlushPattern = async (
       return await redis.del(...keys);
     }
     return 0;
-  } catch (error) {
-    console.warn(`[Redis Safe Flush Error] Pattern "${pattern}":`, error);
+  } catch {
     return 0;
   }
 };
