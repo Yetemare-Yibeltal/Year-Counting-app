@@ -2,58 +2,52 @@ import React, { useState } from "react";
 import { NavLink } from "react-router-dom";
 
 export const Header: React.FC = () => {
-  const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [isMobileOpen, setIsMobileOpen] = useState<boolean>(false);
 
   const getLinkClass = ({ isActive }: { isActive: boolean }) =>
-    `flex items-center gap-2 transition-colors ${
-      isActive ? "text-indigo-400 font-semibold" : "hover:text-indigo-400 text-gray-300"
+    `flex items-center gap-2 transition-colors px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold ${
+      isActive
+        ? "text-indigo-400 bg-indigo-500/10 border border-indigo-500/20"
+        : "text-gray-300 hover:text-indigo-400 hover:bg-gray-800/50"
     }`;
 
   return (
     <header className="border-b border-gray-800 bg-gray-900/90 backdrop-blur-md sticky top-0 z-50">
-      <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
-        {/* Brand Logo */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+        {/* Brand Header */}
         <NavLink to="/" className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-black text-sm shadow-lg shadow-indigo-500/30">
             YC
           </div>
           <span className="text-lg font-bold text-white tracking-wide flex items-center gap-2">
-            YearCounter <span className="text-xs font-normal text-gray-400">v1.0.0</span>
+            YearCounter <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-gray-800 text-gray-400 border border-gray-700">v1.2.0</span>
           </span>
         </NavLink>
 
         {/* Desktop Navigation */}
-        <nav className="hidden md:flex items-center gap-6 text-sm font-medium">
+        <nav className="hidden md:flex items-center gap-2">
           <NavLink to="/" className={getLinkClass}>
-            <svg className="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            Live Tracker
+            Live Solar Engine
           </NavLink>
           <NavLink to="/calculator" className={getLinkClass}>
-            <svg className="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-            </svg>
             Calculator Suite
           </NavLink>
           <NavLink to="/specs" className={getLinkClass}>
-            <svg className="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-            </svg>
-            System Specs
+            System Architecture
           </NavLink>
         </nav>
 
-        {/* Right Engine Status Indicator */}
+        {/* Engine Status Tag */}
         <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
+          <div className="hidden sm:flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-full">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
             <span className="text-xs font-mono text-emerald-400">Engine Active</span>
           </div>
 
           <button
+            type="button"
             onClick={() => setIsMobileOpen(!isMobileOpen)}
-            className="md:hidden p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 focus:outline-none"
+            className="md:hidden p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 focus:outline-none"
             aria-label="Toggle Navigation"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -67,17 +61,17 @@ export const Header: React.FC = () => {
         </div>
       </div>
 
-      {/* Mobile Menu Dropdown */}
+      {/* Mobile Drawer */}
       {isMobileOpen && (
-        <nav className="md:hidden bg-gray-900 border-b border-gray-800 px-4 pt-2 pb-4 space-y-3 text-sm font-medium">
+        <nav className="md:hidden bg-gray-900 border-b border-gray-800 px-4 pt-2 pb-4 space-y-2">
           <NavLink to="/" onClick={() => setIsMobileOpen(false)} className={getLinkClass}>
-            Live Tracker
+            Live Solar Engine
           </NavLink>
           <NavLink to="/calculator" onClick={() => setIsMobileOpen(false)} className={getLinkClass}>
             Calculator Suite
           </NavLink>
           <NavLink to="/specs" onClick={() => setIsMobileOpen(false)} className={getLinkClass}>
-            System Specs
+            System Architecture
           </NavLink>
         </nav>
       )}
