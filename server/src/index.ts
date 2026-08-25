@@ -13,12 +13,8 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 app.use(express.json());
-app.use(globalLimiter);
 
-// API Routes
-app.use("/api/auth", authRoutes);
-app.use("/api/users", userRoutes);
-
+// 1. Health check placed BEFORE rate limiter to ensure uptime checks always respond
 app.get("/health", async (_req, res, next) => {
   try {
     await prisma.$queryRaw`SELECT 1`;
@@ -43,14 +39,35 @@ app.get("/health", async (_req, res, next) => {
   }
 });
 
+// 2. Global rate limiter applied to API endpoints
+app.use(globalLimiter);
+
+// API Routes
+app.use("/api/auth", authRoutes);
+app.use("/api/users", userRoutes);
+
 // Handle unhandled routes (404)
 app.all("*", (req, _res, next) => {
   next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
 });
 
-// Global Centralized Error Handling Middleware
+// Centralized Error Handling Middleware
 app.use(globalErrorHandler);
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
 });
+
+// Graceful Shutdown
+const handleShutdown = async () => {
+  console.log("Shutting down gracefully...");
+  server.close(async () => {
+    await prisma.$disconnect();
+    redis.disconnect();
+    console.log("Database and Redis connections closed.");
+    process.exit(0);
+  });
+};
+
+process.on("SIGINT", handleShutdown);
+process.on("SIGTERM", handleShutdown);
