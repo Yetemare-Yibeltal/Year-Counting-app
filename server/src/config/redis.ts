@@ -1,19 +1,22 @@
-import Redis from "ioredis";
+import Redis from 'ioredis';
 
-const redisUrl = process.env.REDIS_URL || "redis://localhost:6379";
+const redisUrl = process.env.REDIS_URL || 'redis://127.0.0.1:6379';
 
-export const redis = new Redis(redisUrl, {
-  maxRetriesPerRequest: 3,
+export const redisClient = new Redis(redisUrl, {
+  maxRetriesPerRequest: null,
+  enableOfflineQueue: false,
   retryStrategy(times) {
-    const delay = Math.min(times * 50, 2000);
-    return delay;
+    if (times > 1) {
+      return null;
+    }
+    return 2000;
   },
 });
 
-redis.on("connect", () => {
-  console.log("Redis connected successfully");
+redisClient.on('error', () => {
+  console.warn('⚠️ Redis offline — bypassing cache layer.');
 });
 
-redis.on("error", (err) => {
-  console.error("Redis connection error:", err);
+redisClient.on('connect', () => {
+  console.log('✅ Connected to Redis cache service.');
 });
