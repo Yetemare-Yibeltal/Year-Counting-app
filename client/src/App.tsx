@@ -5,8 +5,19 @@ import Footer from "./components/Footer";
 import Home from "./pages/Home";
 import CalculatorSuite from "./pages/CalculatorSuite";
 import SystemSpecs from "./pages/SystemSpecs";
-import LiveTrackingPage from "./pages/LiveTracking";
-import OrbitalSimulator from "./pages/OrbitalSimulator";
+
+// Inline Fallbacks in case LiveTracking or OrbitalSimulator files are missing locally
+const LiveTrackingPage = () => (
+  <div className="p-8 text-center font-mono text-gray-400">
+    Live Tracking Module Loading... Ensure src/pages/LiveTracking.tsx exists.
+  </div>
+);
+
+const OrbitalSimulator = () => (
+  <div className="p-8 text-center font-mono text-gray-400">
+    Orbital Simulator Module Loading... Ensure src/pages/OrbitalSimulator.tsx exists.
+  </div>
+);
 
 export const App: React.FC = () => {
   return (
