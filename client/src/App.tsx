@@ -1,24 +1,27 @@
-// src/App.tsx (or src/components/Layout.tsx)
 import React from "react";
-import { BrowserRouter, Routes, Route } from "react_router_dom"; // Or your router setup
-import { Footer } from "./components/Footer";
+import { Routes, Route, Navigate } from "react-router-dom";
+import Header from "./components/layout/Header";
+import Footer from "./components/Footer";
 import Home from "./pages/Home";
+import CalculatorSuite from "./pages/CalculatorSuite";
+import SystemSpecs from "./pages/SystemSpecs";
 import LiveTrackingPage from "./pages/LiveTracking";
 import OrbitalSimulator from "./pages/OrbitalSimulator";
 
 export const App: React.FC = () => {
   return (
-    <div className="flex flex-col min-h-screen bg-gray-950 text-gray-100">
-      {/* Main Content Area */}
-      <main className="flex-grow">
+    <div className="min-h-screen bg-gray-950 text-gray-100 font-sans flex flex-col selection:bg-indigo-500 selection:text-white">
+      <Header />
+      <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/calculator" element={<CalculatorSuite />} />
+          <Route path="/specs" element={<SystemSpecs />} />
           <Route path="/tracking" element={<LiveTrackingPage />} />
           <Route path="/simulator" element={<OrbitalSimulator />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
-
-      {/* Global Footer */}
       <Footer />
     </div>
   );
