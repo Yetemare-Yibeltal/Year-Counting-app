@@ -20,7 +20,9 @@ export const Header: React.FC = () => {
             YC
           </div>
           <span className="text-lg font-bold text-white tracking-wide flex items-center gap-2">
-            YearCounter <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-gray-800 text-gray-400 border border-gray-700">v1.2.0</span>
+            Year Counter <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-gray-800 text-gray-400 border border-gray-700">
+
+            </span>
           </span>
         </NavLink>
 

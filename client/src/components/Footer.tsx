@@ -15,7 +15,7 @@ export const Footer: React.FC = () => {
           <div className="md:col-span-2 space-y-4">
             <div className="flex items-center gap-3">
               <img
-                src="/profile-photo.jpg"
+                src="../../src/profile-photo.jpg"
                 alt="Metages Yibeltal"
                 className="w-12 h-12 rounded-full border-2 border-indigo-500 object-cover shadow-md"
               />
@@ -24,7 +24,7 @@ export const Footer: React.FC = () => {
                   Metages Yibeltal
                 </h3>
                 <p className="text-xs text-indigo-400 font-medium">
-                  Full-Stack Software Engineer & Project Lead
+                  Full-Stack Engineer & Software Developer 
                 </p>
               </div>
             </div>
@@ -59,17 +59,6 @@ export const Footer: React.FC = () => {
 
           {/* Column 3: Platform Status & Contact */}
           <div className="space-y-3 font-mono text-xs">
-            <h4 className="text-xs font-bold uppercase text-gray-200 tracking-wider">
-              System Health
-            </h4>
-            <div className="flex items-center gap-2 text-emerald-400">
-              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span>All Systems Operational</span>
-            </div>
-            <div className="flex items-center gap-2 text-gray-400 pt-1">
-              <ShieldCheck className="w-4 h-4 text-indigo-400" />
-              <span>ISO-8601 & Ethiopic Compliant</span>
-            </div>
           </div>
         </div>
 
@@ -83,7 +72,6 @@ export const Footer: React.FC = () => {
           <div className="flex items-center gap-1.5">
             <span>Built by</span>
             <span className="font-bold text-white">Metages Yibeltal</span>
-            <span>with</span>
             <Heart className="w-3.5 h-3.5 text-red-500 fill-red-500 animate-pulse inline" />
           </div>
 
